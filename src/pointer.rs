@@ -60,7 +60,7 @@ impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
 
 impl<T: ?Sized> From<&'static T> for Pointer<T> {
     fn from(ptr: &'static T) -> Pointer<T> {
-        unsafe fn clone<T: ?Sized>(arg: &T) -> NonNull<T> {
+        fn clone<T: ?Sized>(arg: &T) -> NonNull<T> {
             NonNull::from(arg)
         }
         unsafe fn drop<T: ?Sized>(_ptr: NonNull<T>) { }
