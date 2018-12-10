@@ -34,8 +34,8 @@ impl<T: ?Sized> From<Rc<T>> for Pointer<T> {
         }
         Pointer {
             ptr: unsafe { wrap(ptr) },
-            clone: clone::<T>,
-            drop: drop::<T>,
+            clone,
+            drop,
             sync: false,
         }
     }
@@ -57,8 +57,8 @@ impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
         }
         Pointer {
             ptr: unsafe { wrap(ptr) },
-            clone: clone::<T>,
-            drop: drop::<T>,
+            clone,
+            drop,
             sync: true,
         }
     }
@@ -72,8 +72,8 @@ impl<T: ?Sized> From<&'static T> for Pointer<T> {
         unsafe fn drop<T: ?Sized>(_ptr: NonNull<T>) { }
         Pointer {
             ptr: wrap(ptr),
-            clone: wrap::<T>,
-            drop: drop::<T>,
+            clone: wrap,
+            drop,
             sync: true,
         }
     }
