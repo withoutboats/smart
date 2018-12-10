@@ -20,17 +20,20 @@ impl<T: ?Sized> Deref for Pointer<T> {
 
 impl<T: ?Sized> From<Rc<T>> for Pointer<T> {
     fn from(ptr: Rc<T>) -> Pointer<T> {
+        unsafe fn wrap<T: ?Sized>(rc: Rc<T>) -> NonNull<T> {
+            NonNull::new_unchecked(Rc::into_raw(rc) as *mut _)
+        }
         unsafe fn clone<T: ?Sized>(arg: &T) -> NonNull<T> {
             let arg = Rc::from_raw(arg);
             let rc = arg.clone();
             mem::forget(arg);
-            NonNull::new_unchecked(Rc::into_raw(rc) as *mut _)
+            wrap(rc)
         }
         unsafe fn drop<T: ?Sized>(ptr: NonNull<T>) {
             mem::drop(Rc::from_raw(ptr.as_ptr()));
         }
         Pointer {
-            ptr: unsafe { NonNull::new_unchecked(Rc::into_raw(ptr) as *mut _) },
+            ptr: unsafe { wrap(ptr) },
             clone: clone::<T>,
             drop: drop::<T>,
             sync: false,
@@ -40,17 +43,20 @@ impl<T: ?Sized> From<Rc<T>> for Pointer<T> {
 
 impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
     fn from(ptr: Arc<T>) -> Pointer<T> {
+        unsafe fn wrap<T: ?Sized>(arc: Arc<T>) -> NonNull<T> {
+            NonNull::new_unchecked(Arc::into_raw(arc) as *mut _)
+        }
         unsafe fn clone<T: ?Sized>(arg: &T) -> NonNull<T> {
             let arg = Arc::from_raw(arg);
             let rc = arg.clone();
             mem::forget(arg);
-            NonNull::new_unchecked(Arc::into_raw(rc) as *mut _)
+            wrap(rc)
         }
         unsafe fn drop<T: ?Sized>(ptr: NonNull<T>) {
             mem::drop(Arc::from_raw(ptr.as_ptr()));
         }
         Pointer {
-            ptr: unsafe { NonNull::new_unchecked(Arc::into_raw(ptr) as *mut _) },
+            ptr: unsafe { wrap(ptr) },
             clone: clone::<T>,
             drop: drop::<T>,
             sync: true,
@@ -60,13 +66,13 @@ impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
 
 impl<T: ?Sized> From<&'static T> for Pointer<T> {
     fn from(ptr: &'static T) -> Pointer<T> {
-        fn clone<T: ?Sized>(arg: &T) -> NonNull<T> {
+        fn wrap<T: ?Sized>(arg: &T) -> NonNull<T> {
             NonNull::from(arg)
         }
         unsafe fn drop<T: ?Sized>(_ptr: NonNull<T>) { }
         Pointer {
-            ptr: NonNull::from(ptr),
-            clone: clone::<T>,
+            ptr: wrap(ptr),
+            clone: wrap::<T>,
             drop: drop::<T>,
             sync: true,
         }
