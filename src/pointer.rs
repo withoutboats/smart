@@ -31,8 +31,8 @@ impl<T: ?Sized> From<Rc<T>> for Pointer<T> {
         }
         Pointer {
             ptr: unsafe { NonNull::new_unchecked(Rc::into_raw(ptr) as *mut _) },
-            clone: clone::<T>,
-            drop: drop::<T>,
+            clone,
+            drop,
             sync: false,
         }
     }
@@ -51,8 +51,8 @@ impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
         }
         Pointer {
             ptr: unsafe { NonNull::new_unchecked(Arc::into_raw(ptr) as *mut _) },
-            clone: clone::<T>,
-            drop: drop::<T>,
+            clone,
+            drop,
             sync: true,
         }
     }
@@ -66,8 +66,8 @@ impl<T: ?Sized> From<&'static T> for Pointer<T> {
         fn drop<T: ?Sized>(_ptr: NonNull<T>) { }
         Pointer {
             ptr: NonNull::from(ptr),
-            clone: clone::<T>,
-            drop: drop::<T>,
+            clone,
+            drop,
             sync: true,
         }
     }
