@@ -18,6 +18,14 @@ impl<T> SyncPointer<T> {
     pub fn new(data: T) -> SyncPointer<T> {
         SyncPointer::from(Arc::new(data))
     }
+
+    pub unsafe fn from_shared(ptr: SharedPointer<T>) -> SyncPointer<T> {
+        // ... or use TryFrom? (currently nightly)
+        if !ptr.inner.sync {
+            panic!("Cannot upgrade non-threadsafe SharedPointer to SyncPointer");
+        }
+        SyncPointer { inner: ptr.inner }
+    }
 }
 
 impl<T: ?Sized> Deref for SyncPointer<T> {
@@ -35,15 +43,6 @@ impl<T: ?Sized> From<&'static T> for SyncPointer<T> {
 impl<T: ?Sized> From<Arc<T>> for SyncPointer<T> {
     fn from(ptr: Arc<T>) -> SyncPointer<T> {
         SyncPointer { inner: Pointer::from(ptr) }
-    }
-}
-
-impl<T: ?Sized> From<SharedPointer<T>> for SyncPointer<T> {
-    fn from(ptr: SharedPointer<T>) -> SyncPointer<T> {
-        if !ptr.inner.sync {
-            panic!("Cannot upgrade non-threadsafe SharedPointer to SyncPointer");
-        }
-        SyncPointer { inner: ptr.inner }
     }
 }
 
