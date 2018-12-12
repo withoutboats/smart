@@ -2,6 +2,8 @@
 
 use super::*;
 
+use std::convert::TryFrom;
+use std::panic;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -48,6 +50,28 @@ fn convert_from_rc_panics() {
 #[test]
 fn convert_from_arc() {
     assert_eq!(*SyncPointer::from(SharedPointer::from(Arc::new(0))), 0);
+}
+
+#[test]
+fn try_convert_from_static() {
+    assert_eq!(
+        SyncPointer::try_from(SharedPointer::from(&X)).map(|x| *x),
+        Ok(0)
+    );
+}
+
+#[test]
+fn try_convert_from_rc_panics() {
+    let ptr = SharedPointer::from(Rc::new(0));
+    assert!(panic::catch_unwind(|| SyncPointer::try_from(ptr)).is_err())
+}
+
+#[test]
+fn try_convert_from_arc() {
+    assert_eq!(
+        SyncPointer::try_from(SharedPointer::from(Arc::new(0))).map(|x| *x),
+        Ok(0)
+    );
 }
 
 #[test]

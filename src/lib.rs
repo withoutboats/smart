@@ -10,6 +10,7 @@
 //! threadsafe. Converting a SharedPointer to a SyncPointer is allowed, but panics if the
 //! SharedPointer was constructed from an Rc.
 #![deny(warnings, missing_docs)]
+#![cfg_attr(test, feature(try_from))]
 
 mod pointer;
 mod shared;
