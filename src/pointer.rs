@@ -24,13 +24,13 @@ impl<T: ?Sized> From<Rc<T>> for Pointer<T> {
             let arg = Rc::from_raw(arg);
             let rc = arg.clone();
             mem::forget(arg);
-            NonNull::new_unchecked(Rc::into_raw(rc) as *mut _)
+            rc_to_non_null(rc)
         }
         unsafe fn drop<T: ?Sized>(ptr: NonNull<T>) {
             mem::drop(Rc::from_raw(ptr.as_ptr()));
         }
         Pointer {
-            ptr: unsafe { NonNull::new_unchecked(Rc::into_raw(ptr) as *mut _) },
+            ptr: rc_to_non_null(ptr),
             clone,
             drop,
             sync: false,
@@ -44,13 +44,13 @@ impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
             let arg = Arc::from_raw(arg);
             let rc = arg.clone();
             mem::forget(arg);
-            NonNull::new_unchecked(Arc::into_raw(rc) as *mut _)
+            arc_to_non_null(rc)
         }
         unsafe fn drop<T: ?Sized>(ptr: NonNull<T>) {
             mem::drop(Arc::from_raw(ptr.as_ptr()));
         }
         Pointer {
-            ptr: unsafe { NonNull::new_unchecked(Arc::into_raw(ptr) as *mut _) },
+            ptr: arc_to_non_null(ptr),
             clone,
             drop,
             sync: true,
@@ -88,4 +88,12 @@ impl<T: ?Sized> Drop for Pointer<T> {
     fn drop(&mut self) {
         unsafe { (self.drop)(self.ptr) }
     }
+}
+
+// TODO: lift these into From impl in the stdlib (and do From<Box<T>> too while you're at it)
+fn rc_to_non_null<T: ?Sized>(rc: Rc<T>) -> NonNull<T> {
+    unsafe { NonNull::new_unchecked(Rc::into_raw(rc) as *mut _) }
+}
+fn arc_to_non_null<T: ?Sized>(arc: Arc<T>) -> NonNull<T> {
+    unsafe { NonNull::new_unchecked(Arc::into_raw(arc) as *mut _) }
 }
