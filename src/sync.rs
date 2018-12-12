@@ -20,6 +20,17 @@ impl<T> SyncPointer<T> {
     }
 }
 
+impl<T: ?Sized> SyncPointer<T> {
+    /// Attempt to construct `SyncPointer<T>` via a conversion.
+    pub fn try_from_shared(ptr: SharedPointer<T>) -> Result<SyncPointer<T>, &'static str> {
+        if ptr.inner.sync {
+            Ok(SyncPointer { inner: ptr.inner })
+        } else {
+            Err("Cannot upgrade non-threadsafe SharedPointer to SyncPointer")
+        }
+    }
+}
+
 impl<T: ?Sized> Deref for SyncPointer<T> {
     type Target = T;
     fn deref(&self) -> &T {
@@ -40,10 +51,10 @@ impl<T: ?Sized> From<Arc<T>> for SyncPointer<T> {
 
 impl<T: ?Sized> From<SharedPointer<T>> for SyncPointer<T> {
     fn from(ptr: SharedPointer<T>) -> SyncPointer<T> {
-        if !ptr.inner.sync {
-            panic!("Cannot upgrade non-threadsafe SharedPointer to SyncPointer");
+        match SyncPointer::try_from_shared(ptr) {
+            Ok(x) => x,
+            Err(e) => panic!("{}", e),
         }
-        SyncPointer { inner: ptr.inner }
     }
 }
 

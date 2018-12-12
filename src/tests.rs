@@ -49,3 +49,48 @@ fn convert_from_rc_panics() {
 fn convert_from_arc() {
     assert_eq!(*SyncPointer::from(SharedPointer::from(Arc::new(0))), 0);
 }
+
+#[test]
+fn custom_try_convert_from_static() {
+    assert_eq!(
+        SyncPointer::try_from_shared(SharedPointer::from(&X)).map(|x| *x),
+        Ok(0)
+    );
+}
+
+#[test]
+fn custom_try_convert_from_rc_errors() {
+    assert_eq!(
+        SyncPointer::try_from_shared(SharedPointer::from(Rc::new(0))).map(|x| *x),
+        Err("Cannot upgrade non-threadsafe SharedPointer to SyncPointer")
+    );
+}
+
+#[test]
+fn custom_try_convert_from_arc() {
+    assert_eq!(
+        SyncPointer::try_from_shared(SharedPointer::from(Arc::new(0))).map(|x| *x),
+        Ok(0)
+    );
+}
+
+#[test]
+fn custom_try_convert_static() {
+    assert_eq!(SharedPointer::from(&X).try_into_sync().map(|x| *x), Ok(0));
+}
+
+#[test]
+fn custom_try_convert_rc_errors() {
+    assert_eq!(
+        SharedPointer::from(Rc::new(0)).try_into_sync().map(|x| *x),
+        Err("Cannot upgrade non-threadsafe SharedPointer to SyncPointer")
+    );
+}
+
+#[test]
+fn custom_try_convert_arc() {
+    assert_eq!(
+        SharedPointer::from(Arc::new(0)).try_into_sync().map(|x| *x),
+        Ok(0)
+    );
+}

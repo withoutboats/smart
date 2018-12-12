@@ -24,6 +24,14 @@ impl<T> SharedPointer<T> {
     }
 }
 
+impl<T: ?Sized> SharedPointer<T> {
+    /// An attempted conversion that consumes `self`, which may or may not be
+    /// expensive.
+    pub fn try_into_sync(self) -> Result<SyncPointer<T>, &'static str> {
+        SyncPointer::try_from_shared(self)
+    }
+}
+
 impl<T: ?Sized> Deref for SharedPointer<T> {
     type Target = T;
     fn deref(&self) -> &T {
