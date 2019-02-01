@@ -24,13 +24,13 @@ impl<T: ?Sized> From<Rc<T>> for Pointer<T> {
             let arg = Rc::from_raw(arg);
             let rc = arg.clone();
             mem::forget(arg);
-            NonNull::new_unchecked(Rc::into_raw(rc) as *mut _)
+            Rc::into_raw_non_null(rc)
         }
         unsafe fn drop<T: ?Sized>(ptr: NonNull<T>) {
             mem::drop(Rc::from_raw(ptr.as_ptr()));
         }
         Pointer {
-            ptr: unsafe { NonNull::new_unchecked(Rc::into_raw(ptr) as *mut _) },
+            ptr: Rc::into_raw_non_null(ptr),
             clone,
             drop,
             sync: false,
@@ -44,13 +44,13 @@ impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
             let arg = Arc::from_raw(arg);
             let rc = arg.clone();
             mem::forget(arg);
-            NonNull::new_unchecked(Arc::into_raw(rc) as *mut _)
+            Arc::into_raw_non_null(rc)
         }
         unsafe fn drop<T: ?Sized>(ptr: NonNull<T>) {
             mem::drop(Arc::from_raw(ptr.as_ptr()));
         }
         Pointer {
-            ptr: unsafe { NonNull::new_unchecked(Arc::into_raw(ptr) as *mut _) },
+            ptr: Arc::into_raw_non_null(ptr),
             clone,
             drop,
             sync: true,
