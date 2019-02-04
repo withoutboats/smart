@@ -24,15 +24,15 @@ impl<T: ?Sized> From<Rc<T>> for Pointer<T> {
             let arg = Rc::from_raw(arg);
             let rc = arg.clone();
             mem::forget(arg);
-            NonNull::new_unchecked(Rc::into_raw(rc) as *mut _)
+            rc_into_raw_non_null(rc)
         }
         unsafe fn drop<T: ?Sized>(ptr: NonNull<T>) {
             mem::drop(Rc::from_raw(ptr.as_ptr()));
         }
         Pointer {
-            ptr: unsafe { NonNull::new_unchecked(Rc::into_raw(ptr) as *mut _) },
-            clone: clone::<T>,
-            drop: drop::<T>,
+            ptr: rc_into_raw_non_null(ptr),
+            clone,
+            drop,
             sync: false,
         }
     }
@@ -44,15 +44,15 @@ impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
             let arg = Arc::from_raw(arg);
             let rc = arg.clone();
             mem::forget(arg);
-            NonNull::new_unchecked(Arc::into_raw(rc) as *mut _)
+            arc_into_raw_non_null(rc)
         }
         unsafe fn drop<T: ?Sized>(ptr: NonNull<T>) {
             mem::drop(Arc::from_raw(ptr.as_ptr()));
         }
         Pointer {
-            ptr: unsafe { NonNull::new_unchecked(Arc::into_raw(ptr) as *mut _) },
-            clone: clone::<T>,
-            drop: drop::<T>,
+            ptr: arc_into_raw_non_null(ptr),
+            clone,
+            drop,
             sync: true,
         }
     }
@@ -60,14 +60,14 @@ impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
 
 impl<T: ?Sized> From<&'static T> for Pointer<T> {
     fn from(ptr: &'static T) -> Pointer<T> {
-        unsafe fn clone<T: ?Sized>(arg: &T) -> NonNull<T> {
+        fn clone<T: ?Sized>(arg: &T) -> NonNull<T> {
             NonNull::from(arg)
         }
-        unsafe fn drop<T: ?Sized>(_ptr: NonNull<T>) { }
+        fn drop<T: ?Sized>(_ptr: NonNull<T>) { }
         Pointer {
             ptr: NonNull::from(ptr),
-            clone: clone::<T>,
-            drop: drop::<T>,
+            clone,
+            drop,
             sync: true,
         }
     }
@@ -88,4 +88,21 @@ impl<T: ?Sized> Drop for Pointer<T> {
     fn drop(&mut self) {
         unsafe { (self.drop)(self.ptr) }
     }
+}
+
+#[cfg(feature = "nightly")]
+fn rc_into_raw_non_null<T: ?Sized>(rc: Rc<T>) -> NonNull<T> {
+    Rc::into_raw_non_null(rc)
+}
+#[cfg(feature = "nightly")]
+fn arc_into_raw_non_null<T: ?Sized>(arc: Arc<T>) -> NonNull<T> {
+    Arc::into_raw_non_null(arc)
+}
+#[cfg(not(feature = "nightly"))]
+fn rc_into_raw_non_null<T: ?Sized>(rc: Rc<T>) -> NonNull<T> {
+    unsafe { NonNull::new_unchecked(Rc::into_raw(rc) as *mut _) }
+}
+#[cfg(not(feature = "nightly"))]
+fn arc_into_raw_non_null<T: ?Sized>(arc: Arc<T>) -> NonNull<T> {
+    unsafe { NonNull::new_unchecked(Arc::into_raw(arc) as *mut _) }
 }
