@@ -40,7 +40,7 @@ impl<T: ?Sized> From<Arc<T>> for SyncPointer<T> {
 
 impl<T: ?Sized> From<SharedPointer<T>> for SyncPointer<T> {
     fn from(ptr: SharedPointer<T>) -> SyncPointer<T> {
-        if !ptr.inner.sync {
+        if !ptr.inner.sync() {
             panic!("Cannot upgrade non-threadsafe SharedPointer to SyncPointer");
         }
         SyncPointer { inner: ptr.inner }

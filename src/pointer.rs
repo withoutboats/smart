@@ -6,10 +6,24 @@ use std::sync::Arc;
 
 pub(crate) struct Pointer<T: ?Sized> {
     ptr: NonNull<T>,
+    // Invariant: This NonNull must always be a &'static
+    vtable: NonNull<VTable<T>>,
+}
+
+struct VTable<T: ?Sized> {
     clone: unsafe fn(&T) -> NonNull<T>,
     drop: unsafe fn(NonNull<T>),
-    pub(crate) sync: bool,
+    sync: bool,
 }
+
+impl<T: ?Sized> Pointer<T> {
+    #[inline(always)]
+    pub(crate) fn sync(&self) -> bool {
+        // Safe because vtable must always be a &'static
+        unsafe { self.vtable.as_ref().sync }
+    }
+}
+
 
 impl<T: ?Sized> Deref for Pointer<T> {
     type Target = T;
@@ -31,9 +45,11 @@ impl<T: ?Sized> From<Rc<T>> for Pointer<T> {
         }
         Pointer {
             ptr: rc_into_raw_non_null(ptr),
-            clone,
-            drop,
-            sync: false,
+            vtable: NonNull::from(&VTable {
+                clone,
+                drop,
+                sync: false,
+            })
         }
     }
 }
@@ -51,9 +67,11 @@ impl<T: ?Sized> From<Arc<T>> for Pointer<T> {
         }
         Pointer {
             ptr: arc_into_raw_non_null(ptr),
-            clone,
-            drop,
-            sync: true,
+            vtable: NonNull::from(&VTable {
+                clone,
+                drop,
+                sync: true,
+            })
         }
     }
 }
@@ -66,9 +84,11 @@ impl<T: ?Sized> From<&'static T> for Pointer<T> {
         fn drop<T: ?Sized>(_ptr: NonNull<T>) { }
         Pointer {
             ptr: NonNull::from(ptr),
-            clone,
-            drop,
-            sync: true,
+            vtable: NonNull::from(&VTable {
+                clone,
+                drop,
+                sync: true,
+            })
         }
     }
 }
@@ -76,17 +96,17 @@ impl<T: ?Sized> From<&'static T> for Pointer<T> {
 impl<T: ?Sized> Clone for Pointer<T> {
     fn clone(&self) -> Pointer<T> {
         Pointer {
-            ptr: unsafe { (self.clone)(self.ptr.as_ref()) },
-            clone: self.clone,
-            drop: self.drop,
-            sync: self.sync,
+            // Safe because vtable must always be a &'static
+            ptr: unsafe { (self.vtable.as_ref().clone)(self.ptr.as_ref()) },
+            vtable: self.vtable,
         }
     }
 }
 
 impl<T: ?Sized> Drop for Pointer<T> {
     fn drop(&mut self) {
-        unsafe { (self.drop)(self.ptr) }
+        // Safe because vtable must always be a &'static
+        unsafe { (self.vtable.as_ref().drop)(self.ptr) }
     }
 }
 
