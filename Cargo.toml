@@ -2,7 +2,7 @@
 name = "smart"
 description = "dynamically-dispatched smart pointers"
 license = "MIT OR Apache-2.0"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Without Boats <boats@mozilla.com>"]
 repository = "https://github.com/withoutboats/smart"
 edition = "2018"
